@@ -2,7 +2,7 @@
 
 This script assigns genotypes to *Shigella sonnei* genomes and detectes known mutations in the quinolone-resistance determining region (QRDR) of genes *gyrA* and *parC*. 
 
-It is based on similar code developed for genotyping [*Salmonella* Typhi](https://github.com/katholt/genotyphi).
+It is based on the [GenoTyphi](https://github.com/katholt/genotyphi) code developed for genotyping *Salmonella* Typhi.
 
 Inputs are BAM or VCF files (mapped to the *Shigella sonnei* 53G reference genome, [NC_016822](https://www.ncbi.nlm.nih.gov/nuccore/NC_016822.1)).
 
