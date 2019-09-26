@@ -18,9 +18,9 @@ Dependencies: Python 2.7.5+ ([SAMtools](http://samtools.sourceforge.net/) and [B
 
 [Outputs](https://github.com/katholt/sonneityping/#outputs)
 
-[Generating input BAMS from reads (with example)](https://github.com/katholt/sonneityping/#generating-input-bams-from-reads)
+[Generating input BAMS from reads](https://github.com/katholt/sonneityping/#generating-input-bams-from-reads)
 
-[Generating input VCFs from assemblies (with example)](https://github.com/katholt/sonneityping/#generating-input-vcfs-from-assemblies)
+[Generating input VCFs from assemblies](https://github.com/katholt/sonneityping/#generating-input-vcfs-from-assemblies)
 
 ## Basic Usage - own BAM (recommended if you have reads)
 
