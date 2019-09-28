@@ -20,7 +20,7 @@ def parse_args():
 	parser.add_argument('--ref_id', type=str, required=False,
 						help='Name of the reference in the VCF file (#CHROM column)')
 	parser.add_argument('--phred', type=int, required=False, default=20,
-						help='Minimum phred quality to count a variant call vs CT18 as a true SNP (default 20)')
+						help='Minimum phred quality to count a variant call vs 53G as a true SNP (default 20)')
 	parser.add_argument('--min_prop', type=float, required=False, default=0.1,
 						help='Minimum proportion of reads required to call a SNP (default 0.1)')
 	parser.add_argument('--ref', type=str, required=False,
