@@ -1,3 +1,17 @@
+#!/usr/bin/env python
+#
+# Input BAM (recommended) or VCF (if highly trusted SNP data) relative to Shigella sonnei 53G (NC_016822) and assign S. sonnei genotype codes and detect QRDR mutations.
+#
+# Authors - Kat Holt (drkatholt@gmail.com), Kalani Paranagama
+#
+# Documentation - https://github.com/katholt/sonneityping
+#
+# Dependencies:
+#	 SAMtools (v1.2) and bcftools (v1.2) are required to genotype from BAMs.
+#
+# Last modified - Sep 27, 2019
+#
+
 from argparse import (ArgumentParser, FileType)
 import os, sys, re, collections, operator
 import gzip
@@ -20,7 +34,7 @@ def parse_args():
 	parser.add_argument('--ref_id', type=str, required=False,
 						help='Name of the reference in the VCF file (#CHROM column)')
 	parser.add_argument('--phred', type=int, required=False, default=20,
-						help='Minimum phred quality to count a variant call vs CT18 as a true SNP (default 20)')
+						help='Minimum phred quality to count a variant call vs 53G as a true SNP (default 20)')
 	parser.add_argument('--min_prop', type=float, required=False, default=0.1,
 						help='Minimum proportion of reads required to call a SNP (default 0.1)')
 	parser.add_argument('--ref', type=str, required=False,
@@ -95,7 +109,6 @@ def checkSNP(vcf_line_split, this_groups, proportions, args):
 		i = loci.index(snp)
 
 		if float(vcf_line_split[5]) > args.phred:
-			#print vcf_line_split
 			m = re.search("DP4=(\d+),(\d+),(\d+),(\d+)", vcf_line_split[7])
 			if m != None:
 				alt_read_count = int(m.group(3)) + int(m.group(4))
@@ -332,9 +345,9 @@ def parseGeno(this_groups, proportions):
 		final_geno = ','.join(clades)
 	if len(subclades) > 0:
 		final_geno = ','.join(subclades)
-		print final_geno
-		print primary
-		print clades
+		#print final_geno
+		#print primary
+		#print clades
 
 	# add proportion of reads supporting each of these groups
 	p_prod = 1
@@ -473,16 +486,16 @@ def main():
 
 		if args.mode == 'bam':
 			output_file.write('\t'.join(
-				['File', 'Final_call', 'Final_call_support', 'Subclade', 'Clade', 'PrimaryClade', 'Support_Subclade',
-				 'Support_Clade', 'Support_PrimaryClade', 'QRDR mutations', 'Number of SNPs called\n']))
+				['File', 'Final_call', 'Final_call_support', 'Subclade', 'Clade', 'Lineage', 'Support_Subclade',
+				 'Support_Clade', 'Support_Lineage', 'QRDR mutations', 'Number of SNPs called\n']))
 		elif args.mode == 'vcf':
 			output_file.write('\t'.join(
-				['File', 'Final_call', 'Final_call_support', 'Subclade', 'Clade', 'PrimaryClade', 'Support_Subclade',
-				 'Support_Clade', 'Support_PrimaryClade', 'QRDR mutations\n']))
+				['File', 'Final_call', 'Final_call_support', 'Subclade', 'Clade', 'Lineage', 'Support_Subclade',
+				 'Support_Clade', 'Support_Lineage', 'QRDR mutations\n']))
 		else:
 			output_file.write('\t'.join(
-				['File', 'Final_call', 'Final_call_support', 'Subclade', 'Clade', 'PrimaryClade', 'Support_Subclade',
-				 'Support_Clade', 'Support_PrimaryClade\n']))
+				['File', 'Final_call', 'Final_call_support', 'Subclade', 'Clade', 'Lineage', 'Support_Subclade',
+				 'Support_Clade', 'Support_Lineage\n']))
 
 		# PARSE MAPPING BASED VCFS (1 per strain)
 
@@ -517,8 +530,6 @@ def main():
 
 				f.close()
 				
-				###DEBGUG
-				print this_qrdr_groups
 
 				#"qrdr_groups".join(qrdr_groups)
 				if any_ref_line > 0:
