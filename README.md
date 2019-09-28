@@ -27,19 +27,19 @@ Dependencies: Python 2.7.5+ ([SAMtools](http://samtools.sourceforge.net/) and [B
 Note the BAM files must be sorted (e.g. using samtools sort)
 
 ```
-python sonnei_genotype.py --mode bam --bam *.bam --ref NC_016822.fasta --ref_id NC_016822.1 --output genotypes.txt
+python sonnei_genotype.py --mode bam --bam *.bam --ref NC_016822.fasta --ref_id NC_016822.1 --allele_table alleles_v1.txt --output genotypes.txt
 ```
 
 ## Basic Usage - own VCF
 
 ```
-python sonnei_genotype.py --mode vcf --vcf *.vcf --ref_id NC_016822 --output genotypes.txt
+python sonnei_genotype.py --mode vcf --vcf *.vcf --ref_id NC_016822 --allele_table alleles_v1.txt --output genotypes.txt
 ```
 
 ## Basic Usage - assemblies aligned with ParSNP (recommended if you only have assembly data available and no reads)
 
 ```
-python sonnei_genotype.py --mode vcf_parsnp --vcf parsnp.vcf --output genotypes.txt
+python sonnei_genotype.py --mode vcf_parsnp --vcf parsnp.vcf --allele_table alleles_v1.txt --output genotypes.txt
 ```
 
 ## Options
@@ -97,19 +97,21 @@ Requires [SAMtools](http://samtools.sourceforge.net/) and [BCFtools](https://sam
 
 --output                Specify the location of the output text file (default genotypes_[timestamp].txt)
 
+--allel_table           Location of allele table containing marker SNPs
+
 ```
 
 ## Outputs
 
 Output is to standard out, in tab delimited format.
 
-The script works by looking for SNPs that define nested levels of phylogenetic lineages for _S. sonnei_: lineages, clades and subclades. These are named in the form 1.2.3, which indicates primary cluster 1, clade 1.2, and subclade 1.2.3. 
+The script works by looking for SNPs that define nested levels of phylogenetic lineages for _S. sonnei_: lineages, clades and subclades. These are named in the form 1.2.3, which indicates Lineage 1, clade 1.2, and subclade 1.2.3. 
 
 All genotypes implicated by the detected SNPs will be reported (comma separated if multiple are found). 
 
-Usually subclade, clade and lineage SNPs will be compatible, i.e. you would expect to see 1.2.3 in the subclade column, 1.2 in the clade column and 1 in the primary clade column.
+Usually Lineage, clade and subclade SNPs will be compatible, i.e. you would expect to see 1.2.3 in the subclade column, 1.2 in the clade column and 1 in the Lineage column.
 
-The first column 'Final_call' indicates the highest resolution genotype (subclade > clade > primary clade) that could be called.
+The first column 'Final_call' indicates the highest resolution genotype (subclade > clade > lineage) that could be called.
 
 As recombination is extremely rare in S. sonnei, it is unlikely that DNA isolated from a single S. sonnei culture would have high quality SNPs that are compatible with multiple genotypes, or incompatible clade/subclade combinations... therefore if you see this in the output, it is worth investigating further whether you have contaminated sequence data or a genuine recombination. To provide very basic assistance with this the output file indicates, for each genotype-defining SNP detected, the proportion of reads that support the genotype call. A genuine recombinant strain would have p=1 for multiple incompatible SNPs, whereas a mixed DNA sample might have p~0.5. Note that if you are genotyping from assemblies, we have no information on read support to work with; instead you will see an 'A' in the Final_call_support column to indicate this result comes from a genome assembly.
 
