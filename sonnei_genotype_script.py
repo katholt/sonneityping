@@ -309,7 +309,7 @@ def parseGeno(this_groups, proportions):
 	if '2.8.2' in subclades:
 		subclades.remove('2.8.2')  # anything NOT in 2.8.2 will have this SNP
 
-	# state subclade for cipR-parent
+	# state subclade for 3.6.0 strains
 	if (len(subclades) == 0) and ('3.6' in clades):
 		subclades.append('3.6.0')
 
