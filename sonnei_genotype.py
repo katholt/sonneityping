@@ -63,6 +63,7 @@ qrdr_groups = [' gyrA-S83L', 'gyrA_D87G', 'gyrA_D87Y', 'parC_S80I']
 loci = []
 snp_alleles = []
 groups = []
+group_names = {} #key=group, value=name
 
 
 # check if this SNP defines a QRDR group
@@ -153,7 +154,7 @@ def checkSNPmulti(vcf_line_split, this_groups, args):
 
 
 # sort groups into the three levels (primary, clade, subclade)
-def parseGeno(this_groups, proportions):
+def parseGeno(this_groups, proportions, group_names):
 
 	subclades = []
 	clades = []
@@ -377,6 +378,12 @@ def parseGeno(this_groups, proportions):
 	else:
 		info += str(round(p_prod, 2))  # indicate proportion of reads supporting this call
 
+	# name
+	this_name = '-'
+	if final_geno in group_names:
+		this_name = group_names[final_geno]
+	info += '\t' + this_name
+
 	# level calls
 	info += '\t' + ','.join(subclades) + '\t' + ','.join(clades) + '\t' + ','.join(primary)
 
@@ -409,19 +416,18 @@ def run_command(command, **kwargs):
 def main():
 	args = parse_args()
 
-	#with open('allele_table.txt') as input_file:
 	f = file(args.allele_table,"r")
 	for line in f:
 		fields = line.strip().split('\t')
 		locus = int(fields[0])
 		allele = fields[1]
 		group = fields[2]
+		group_name = fields[3]
 		loci.append(locus)
 		snp_alleles.append(allele)
 		groups.append(group)
+		group_names[group]=group_name
 	f.close()
-
-
 
 	if (((args.mode == 'vcf') and args.vcf and args.ref_id) or (
 			(args.mode == 'bam') and args.bam and args.ref and args.ref_id) or (
@@ -486,15 +492,15 @@ def main():
 
 		if args.mode == 'bam':
 			output_file.write('\t'.join(
-				['File', 'Final_call', 'Final_call_support', 'Subclade', 'Clade', 'Lineage', 'Support_Subclade',
+				['File', 'Genotype', 'Genotype_support', 'Genotype_name', 'Subclade', 'Clade', 'Lineage', 'Support_Subclade',
 				 'Support_Clade', 'Support_Lineage', 'QRDR mutations', 'Number of SNPs called\n']))
 		elif args.mode == 'vcf':
 			output_file.write('\t'.join(
-				['File', 'Final_call', 'Final_call_support', 'Subclade', 'Clade', 'Lineage', 'Support_Subclade',
+				['File', 'Genotype', 'Genotype_support', 'Genotype_name', 'Subclade', 'Clade', 'Lineage', 'Support_Subclade',
 				 'Support_Clade', 'Support_Lineage', 'QRDR mutations\n']))
 		else:
 			output_file.write('\t'.join(
-				['File', 'Final_call', 'Final_call_support', 'Subclade', 'Clade', 'Lineage', 'Support_Subclade',
+				['File', 'Genotype', 'Genotype_support', 'Genotype_name', 'Subclade', 'Clade', 'Lineage', 'Support_Subclade',
 				 'Support_Clade', 'Support_Lineage\n']))
 
 		# PARSE MAPPING BASED VCFS (1 per strain)
@@ -533,7 +539,7 @@ def main():
 
 				#"qrdr_groups".join(qrdr_groups)
 				if any_ref_line > 0:
-					info = parseGeno(this_groups, proportions)
+					info = parseGeno(this_groups, proportions, group_names)
 					if args.bam:
 						output_file.write(
 							vcf + '\t' + info + '\t' + ','.join(this_qrdr_groups) + '\t' + str(snp_count) + '\n')
@@ -579,7 +585,7 @@ def main():
 				# collate by strain
 				if any_ref_line > 0:
 					for strain in this_groups:
-						info = parseGeno(this_groups[strain], ['A'])
+						info = parseGeno(this_groups[strain], ['A'], group_names)
 						output_file.write(strains[strain] + '\t' + info + '\n')
 				else:
 					output_file.write(strains[strain] + '\tNo SNPs encountered against expected reference. Wrong reference or no SNP calls?\n')
