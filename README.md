@@ -27,19 +27,19 @@ Dependencies: Python 2.7.5+ ([SAMtools](http://samtools.sourceforge.net/) and [B
 Note the BAM files must be sorted (e.g. using samtools sort)
 
 ```
-python sonnei_genotype.py --mode bam --bam *.bam --ref NC_016822.fasta --ref_id NC_016822.1 --allele_table alleles_v1.txt --output genotypes.txt
+python sonnei_genotype.py --mode bam --bam *.bam --ref NC_016822.fasta --ref_id NC_016822.1 --allele_table alleles.txt --output genotypes.txt
 ```
 
 ## Basic Usage - own VCF
 
 ```
-python sonnei_genotype.py --mode vcf --vcf *.vcf --ref_id NC_016822 --allele_table alleles_v1.txt --output genotypes.txt
+python sonnei_genotype.py --mode vcf --vcf *.vcf --ref_id NC_016822 --allele_table alleles.txt --output genotypes.txt
 ```
 
 ## Basic Usage - assemblies aligned with ParSNP (recommended if you only have assembly data available and no reads)
 
 ```
-python sonnei_genotype.py --mode vcf_parsnp --vcf parsnp.vcf --allele_table alleles_v1.txt --output genotypes.txt
+python sonnei_genotype.py --mode vcf_parsnp --vcf parsnp.vcf --allele_table alleles.txt --output genotypes.txt
 ```
 
 ## Options
@@ -97,13 +97,19 @@ Requires [SAMtools](http://samtools.sourceforge.net/) and [BCFtools](https://sam
 
 --output                Specify the location of the output text file (default genotypes_[timestamp].txt)
 
---allel_table           Location of allele table containing marker SNPs
+--allele_table           Location of allele table containing marker SNPs
 
 ```
 
 ## Outputs
 
-Output is to standard out, in tab delimited format.
+Output is to standard out, in tab delimited format:
+
+| File | Genotype | Genotype_support | Genotype_name | Subclade | Clade | Lineage | Support_Subclade | Support_Clade | Support_Lineage | QRDR mutations |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| str1.vcf | 2.10.2 | 1 | Latin America IIa | 2.10.2 | 2.1 | 2 | 1 | 1 |   |   |
+| str2.vcf | 3.7.29 | 1 | Global III VN | 3.7.29 | 3.7 | 2 | 1 | 1 | 1 |   |   |
+| str3.vcf | 3.6.3 | 1 | Central Asia III | 3.6.3 | 3.6 | 2 | 1 | 1 | 1 | gyrA_D87Y |
 
 The script works by looking for SNPs that define nested levels of phylogenetic lineages for _S. sonnei_: lineages, clades and subclades. These are named in the form 1.2.3, which indicates Lineage 1, clade 1.2, and subclade 1.2.3. 
 
