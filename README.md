@@ -4,7 +4,7 @@ This script assigns genotypes to *Shigella sonnei* genomes and detectes known mu
 
 It is adapted from the [GenoTyphi](https://github.com/katholt/genotyphi) code developed for genotyping *Salmonella* Typhi.
 
-#### Inputs 
+## Input files 
 * Tab-delim table of marker schemes in the scheme (`alleles.txt` in this repository)
 * Sorted BAM files (mapped to the *Shigella sonnei* 53G reference genome, [NC_016822](https://www.ncbi.nlm.nih.gov/nuccore/NC_016822.1)).
 * Reference sequence (required only when working from BAM files). 
@@ -113,7 +113,7 @@ Requires [SAMtools](http://samtools.sourceforge.net/) and [BCFtools](https://sam
 
 ```
 
-## Outputs
+## Output file
 
 Output is to standard out, in tab delimited format:
 
