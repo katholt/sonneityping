@@ -55,7 +55,7 @@ def parse_args():
 
 qrdr_loci = [2503749, 2503737, 2503738, 3476068]
 qrdr_snp_alleles = ['A', 'C', 'A', 'A']
-qrdr_groups = [' gyrA-S83L', 'gyrA_D87G', 'gyrA_D87Y', 'parC_S80I']
+qrdr_groups = ['gyrA-S83L', 'gyrA_D87G', 'gyrA_D87Y', 'parC_S80I']
 
 
 ### Genotype SNP definitions
