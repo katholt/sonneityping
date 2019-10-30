@@ -326,24 +326,13 @@ def parseGeno(this_groups, proportions, group_names):
 # fix subclades relative to 53G:
     if '2.8.2' in subclades:
         subclades.remove('2.8.2')  # anything NOT in 2.8.2 will have this SNP
+    else:
+        if (len(subclades) == 0):
+            subclades.append('2.8.2')  # anything with no subclade, and 2.8.2 SNP NOT called, belongs in 2.8.2 with 53G
 
     # state subclade for 3.6.0 strains
     if (len(subclades) == 0) and ('3.6' in clades):
         subclades.append('3.6.0')
-
-    # if we've removed 2.8.2 but still have no subclades, check that the value in clades is not 2.8
-    # if it ISN'T 2.8, and it's some other clade, then report that clade + .0
-    # if we also don't have a subclade call, report the lineage + .0.0
-    if (len(subclades) == 0) and ('2.8' not in clades):
-        try:
-            subclades.append(clades[0] + '.0')
-        except IndexError:
-            subclades.append(primary[0] + '.0.0')
-    # otherwise if the clade is 2.8, then we indeed do have the reference genotype
-    if len(subclades) == 0:
-        subclades.append('2.8.2')  # anything with no subclade, and 2.8.2 SNP NOT called, belongs in 2.8.2 with 53G
-
-
 
 #store final genotype, to the lowest level available
     if len(primary) == 0:
