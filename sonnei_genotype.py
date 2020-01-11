@@ -13,12 +13,13 @@
 #
 
 from argparse import (ArgumentParser, FileType)
-import os, sys, re, collections, operator
+import os, sys, re, collections, operator, copy
 import gzip
 import logging
 import time
 import datetime
 from subprocess import call, check_output, CalledProcessError, STDOUT
+from Bio.Seq import Seq
 
 
 def parse_args():
@@ -53,26 +54,40 @@ def parse_args():
 
 ### QRDR SNP definitions
 
-qrdr_loci = [2503749, 2503737, 2503738, 3476068, 2503750, 2503738]
-qrdr_snp_alleles = ['A', 'C', 'A', 'A', 'C', 'T']
-qrdr_groups = ['gyrA-S83L', 'gyrA-D87G', 'gyrA-D87Y', 'parC-S80I', 'gyrA-S83A', 'gyrA-D87N']
+#qrdr_loci = [2503749, 2503737, 2503738, 3476068, 2503750, 2503738]
+#qrdr_snp_alleles = ['A', 'C', 'A', 'A', 'C', 'T']
+#qrdr_groups = ['gyrA-S83L', 'gyrA-D87G', 'gyrA-D87Y', 'parC-S80I', 'gyrA-S83A', 'gyrA-D87N']
 
+# for each codon, what is the wt aa
+#qrdr_wt_aa = {'gyrA-87': 'D', 'gyrA-83': 'S', 'parC-80': 'S'}
+# base positions for each codon, in order of base 1, 2, 3 on the FORWARD STRAND
+# note that the read codons and bases for 53G are on the reverse complement strand (eg GTC becomes GAC)
+#qrdr_loci = {'gyrA-87': [2503736, 2503737, 2503738], 'gyrA-83': [2503748, 2503749, 2503750], 'parC-80': [3476067, 3476068, 3476069]}
+#qrdr_loci_list = [2503736, 2503737, 2503738, 2503748, 2503749, 2503750, 3476067, 3476068, 3476069]
+#qrdr_ref_alleles = {'gyrA-87': ['G', 'T', 'C'], 'gyrA-83': ['C', 'G', 'A'], 'parC-80': ['G', 'C', 'T']}
+#qrdr_alleles = {2503738: 'G', 2503737: 'A', 2503736: 'C', 2503750: 'T', 2503749:'C', 2503748: 'G', 3476069: 'A', 3476068: 'G', 3476067: 'C'}
 
 ### Genotype SNP definitions
 
-loci = []
-snp_alleles = []
-groups = []
-group_names = {} #key=group, value=name
+#loci = []
+#snp_alleles = []
+#groups = []
+#group_names = {} #key=group, value=name
 
 
 # check if this SNP defines a QRDR group
-def checkQRDRSNP(vcf_line_split, this_qrdr_groups, qrdr_proportions, args):
+def checkQRDRSNP(vcf_line_split, strain_qrdr_bases, qrdr_loci_list, qrdr_loci, args):
+    # get the snp position
     qrdr_snp = int(vcf_line_split[1])
-    if qrdr_snp in qrdr_loci:
-        i = qrdr_loci.index(qrdr_snp)
+    # if the snp position is in our dict of qrdr snp loci, parse
+    if qrdr_snp in qrdr_loci_list:
+        # this line is getting the index of that loci so we can find the matching allele in the other list - this is a dict now so we don't need to do that
+        #i = qrdr_loci.index(qrdr_snp)
+        # if our snp passes the phred cutoff, continue
         if float(vcf_line_split[5]) > args.phred:
+            # get the dp4 read counts
             m = re.search("DP4=(\d+),(\d+),(\d+),(\d+)", vcf_line_split[7])
+            # calculate proportion of reads that support this snp position
             if m != None:
                 alt_read_count = int(m.group(3)) + int(m.group(4))
                 total_read_count = alt_read_count + int(m.group(1)) + int(m.group(2))
@@ -80,6 +95,7 @@ def checkQRDRSNP(vcf_line_split, this_qrdr_groups, qrdr_proportions, args):
                     qrdr_snp_proportion = float(-1)
                 else:
                     qrdr_snp_proportion = float(alt_read_count) / total_read_count
+            # if no dp4, then calculate proportion of reads supporting snp a different way
             else:
                 if vcf_line_split[4] != '.':  # if the ALT is not '.' i.e. if the alt is not same as ref
                     try:
@@ -89,22 +105,30 @@ def checkQRDRSNP(vcf_line_split, this_qrdr_groups, qrdr_proportions, args):
                         qrdr_snp_proportion = float(alt_read_count) / total_read_count
                     except IndexError:
                         qrdr_snp_proportion = float(-1)
-
+                # otherwise we don't know the proportion of reads supporting snp
                 else:
                     qrdr_snp_proportion = float(
                         -1)	 # set unknowns to negative so that we know this is not a real proportion
 
+            # get the actually snp base call in the strain
             qrdr_snp_allele = vcf_line_split[4]
-            for position in range(0, len(qrdr_loci)):
-                if (qrdr_snp == qrdr_loci[position]) and (qrdr_snp_allele == qrdr_snp_alleles[position]) and (
-                        qrdr_snp_proportion > args.min_prop):
-                    this_qrdr_groups.append(qrdr_groups[position])	# Add QRDR SNP
 
-    return (this_qrdr_groups)
+            # work out what codon this snp position is in
+            # get the codon number of the snp (is it the 1st, 2nd or 3rd base in the codon?)
+            for loci in qrdr_loci:
+                if qrdr_snp in qrdr_loci[loci]:
+                    loci_of_interest = loci
+                    base_num = qrdr_loci[loci].index(qrdr_snp)
+            # if our snp meets the proportion threshold for inclusion, then we alter our qrdr dict list at the appropriate place
+            if qrdr_snp_proportion > args.min_prop:
+                strain_qrdr_bases[loci_of_interest][base_num] = qrdr_snp_allele
+
+
+    return (strain_qrdr_bases)
 
 
 # check if this SNP defines a group
-def checkSNP(vcf_line_split, this_groups, proportions, args):
+def checkSNP(vcf_line_split, this_groups, proportions, loci, snp_alleles, groups, args):
     snp = int(vcf_line_split[1])
     if snp in loci:
         i = loci.index(snp)
@@ -413,7 +437,30 @@ def run_command(command, **kwargs):
 def main():
     args = parse_args()
 
-    f = open(args.allele_table,"r")
+    ### QRDR SNP definitions
+
+    # qrdr_loci = [2503749, 2503737, 2503738, 3476068, 2503750, 2503738]
+    # qrdr_snp_alleles = ['A', 'C', 'A', 'A', 'C', 'T']
+    # qrdr_groups = ['gyrA-S83L', 'gyrA-D87G', 'gyrA-D87Y', 'parC-S80I', 'gyrA-S83A', 'gyrA-D87N']
+
+    # for each codon, what is the wt aa
+    qrdr_wt_aa = {'gyrA-87': 'D', 'gyrA-83': 'S', 'parC-80': 'S'}
+    # base positions for each codon, in order of base 1, 2, 3 on the FORWARD STRAND
+    # note that the read codons and bases for 53G are on the reverse complement strand (eg GTC becomes GAC)
+    qrdr_loci = {'gyrA-87': [2503736, 2503737, 2503738], 'gyrA-83': [2503748, 2503749, 2503750],
+                 'parC-80': [3476067, 3476068, 3476069]}
+    qrdr_loci_list = [2503736, 2503737, 2503738, 2503748, 2503749, 2503750, 3476067, 3476068, 3476069]
+    qrdr_ref_alleles = {'gyrA-87': ['G', 'T', 'C'], 'gyrA-83': ['C', 'G', 'A'], 'parC-80': ['G', 'C', 'T']}
+    # qrdr_alleles = {2503738: 'G', 2503737: 'A', 2503736: 'C', 2503750: 'T', 2503749:'C', 2503748: 'G', 3476069: 'A', 3476068: 'G', 3476067: 'C'}
+
+    ### Genotype SNP definitions
+
+    loci = []
+    snp_alleles = []
+    groups = []
+    group_names = {}  # key=group, value=name
+
+    f = open(args.allele_table, "r")
     for line in f:
         fields = line.strip().split('\t')
         locus = int(fields[0])
@@ -508,6 +555,8 @@ def main():
                 this_qrdr_groups = []  # list of QRDR SNPs found
                 proportions = {}  # proportion of reads supporting each defining SNP; key = group, value = proportion
                 qrdr_proportions = {}  # proportion of reads supporting each defining SNP; key = group, value = proportion
+                # initailse the qrdr bases to be the same as the reference
+                strain_qrdr_bases = copy.deepcopy(qrdr_ref_alleles)
 
                 # read file
                 (file_name, ext) = os.path.splitext(vcf)
@@ -527,11 +576,24 @@ def main():
                         if x[0] == args.ref_id:
                             # parse this SNP line
                             any_ref_line = 1
-                            (this_groups, proportions) = checkSNP(x, this_groups, proportions, args)
-                            this_qrdr_groups = checkQRDRSNP(x, this_qrdr_groups, qrdr_proportions, args)
+                            (this_groups, proportions) = checkSNP(x, this_groups, proportions, loci, snp_alleles, groups, args)
+                            strain_qrdr_bases = checkQRDRSNP(x, strain_qrdr_bases, qrdr_loci_list, qrdr_loci, args)
 
                 f.close()
 
+                # work out what the qrdr mutations are by looking at the codons that have been generated, and comparing
+                # these to WT
+                # in this instance our codons need to be reverse complemented before they can be compared
+                for qrdr_codon in strain_qrdr_bases:
+                    strain_codon = Seq(''.join(strain_qrdr_bases[qrdr_codon]))
+                    # reverse complement it, then translate
+                    strain_codon = strain_codon.reverse_complement().translate()
+                    # compare it to the WT aa for that codon, store if it's NOT a match
+                    if strain_codon != qrdr_wt_aa[qrdr_codon]:
+                        gene_name = qrdr_codon.split('-')[0]
+                        codon_num = qrdr_codon.split('-')[1]
+                        mutation = gene_name + '-' + qrdr_wt_aa[qrdr_codon] + codon_num + str(strain_codon)
+                        this_qrdr_groups.append(mutation)
 
                 #"qrdr_groups".join(qrdr_groups)
                 if any_ref_line > 0:
