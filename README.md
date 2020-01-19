@@ -42,16 +42,25 @@ Note the BAM files must be sorted (e.g. using samtools sort)
 python sonnei_genotype.py --mode bam --bam *.bam --ref NC_016822.fasta --ref_id NC_016822.1 --allele_table alleles.txt --output genotypes.txt
 ```
 
-#### Basic Usage - own VCF
+#### Basic Usage - own VCF (one per genome)
 
 ```
-python sonnei_genotype.py --mode vcf --vcf *.vcf --ref_id NC_016822 --allele_table alleles.txt --output genotypes.txt
+python sonnei_genotype.py --mode vcf --vcf *.vcf --ref_id NC_016822.1 --allele_table alleles.txt --output genotypes.txt
 ```
 
 #### Basic Usage - assemblies aligned with ParSNP (recommended if you only have assembly data available and no reads)
 
 ```
-python sonnei_genotype.py --mode vcf_parsnp --vcf parsnp.vcf --allele_table alleles.txt --output genotypes.txt
+# example code to map assemblies to 53G reference using parsnp & harvesttools and generate VCF
+
+parsnp -d sonnei_assemblies/ -r sonnei_assemblies/53G_chr.fasta -o parsnp_output
+harvesttools -i parsnp_output/parsnp.ggr -V parsnp_output/parsnp.vcf
+
+# note this produces a single VCF file that contains SNPs for all assemblies in the parnsp alignment
+
+# infer genotypes from parsnp VCF file 
+
+python sonnei_genotype.py --mode vcf_parsnp --vcf parsnp_output/parsnp.vcf --allele_table alleles.txt --output genotypes.txt --ref_id NC_016822.1
 ```
 
 ## Options
