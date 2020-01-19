@@ -162,7 +162,7 @@ def checkSNP(vcf_line_split, this_groups, proportions, loci, snp_alleles, groups
     return (this_groups, proportions)
 
 
-def checkSNPmulti(vcf_line_split, this_groups, args):
+def checkSNPmulti(vcf_line_split, this_groups, args, loci, snp_alleles, groups):
     snp = int(vcf_line_split[1])
     if snp in loci:
         i = loci.index(snp)
@@ -636,7 +636,7 @@ def main():
                     if not line.startswith('#'):
                         if x[0] == args.ref_id:
                             any_ref_line = 1  # parse this SNP line
-                            this_groups = checkSNPmulti(x, this_groups, args)
+                            this_groups = checkSNPmulti(x, this_groups, args, loci, snp_alleles, groups)
 
                 f.close()
 
