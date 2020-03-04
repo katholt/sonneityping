@@ -18,7 +18,7 @@ However if you don't have BAMs or you are really confident in the quality of you
 For assemblies, we recommend using [ParSNP](http://harvest.readthedocs.org/) (version 1.0.1) to align genomes to the reference. The resulting multi-sample VCF file(s) can be passed directly to this script via --vcf_parsnp.
 
 ## Dependencies
-* Python 2.7.5+ 
+* Python 2.7.5+ and the BioPython package
 * [SAMtools](http://samtools.sourceforge.net/) and [BCFtools](https://samtools.github.io/bcftools/) are required if you are working from BAM files. (Note Genotyphi has been tested with versions 1.1, 1.2, and 1.3 of both SAMtools and bcftools, subsequently we advise using the same version of both of these dependencies together i.e. SAMtools v1.2 and bcftools v1.2.)
 
 
@@ -42,16 +42,25 @@ Note the BAM files must be sorted (e.g. using samtools sort)
 python sonnei_genotype.py --mode bam --bam *.bam --ref NC_016822.fasta --ref_id NC_016822.1 --allele_table alleles.txt --output genotypes.txt
 ```
 
-#### Basic Usage - own VCF
+#### Basic Usage - own VCF (one per genome)
 
 ```
-python sonnei_genotype.py --mode vcf --vcf *.vcf --ref_id NC_016822 --allele_table alleles.txt --output genotypes.txt
+python sonnei_genotype.py --mode vcf --vcf *.vcf --ref_id NC_016822.1 --allele_table alleles.txt --output genotypes.txt
 ```
 
 #### Basic Usage - assemblies aligned with ParSNP (recommended if you only have assembly data available and no reads)
 
 ```
-python sonnei_genotype.py --mode vcf_parsnp --vcf parsnp.vcf --allele_table alleles.txt --output genotypes.txt
+# example code to map assemblies to 53G reference using parsnp & harvesttools and generate VCF
+
+parsnp -d sonnei_assemblies/ -r sonnei_assemblies/53G_chr.fasta -o parsnp_output
+harvesttools -i parsnp_output/parsnp.ggr -V parsnp_output/parsnp.vcf
+
+# note this produces a single VCF file that contains SNPs for all assemblies in the parnsp alignment
+
+# infer genotypes from parsnp VCF file 
+
+python sonnei_genotype.py --mode vcf_parsnp --vcf parsnp_output/parsnp.vcf --allele_table alleles.txt --output genotypes.txt --ref_id NC_016822.1
 ```
 
 ## Options
