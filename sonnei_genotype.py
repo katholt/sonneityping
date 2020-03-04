@@ -498,7 +498,7 @@ def main():
             vcfFiles = []
 
             # coordinates in zero-base, half-open for SAMtools compatible bed file
-            ordered_loci = list(loci + qrdr_loci)
+            ordered_loci = list(loci + qrdr_loci_list)
             sorted(ordered_loci)
             temp_bed_file = open(args.ref_id + '.bed', 'w')	 # create temporary bed file for SAMtools
             for locus in ordered_loci:
