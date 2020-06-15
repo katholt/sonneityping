@@ -2,7 +2,7 @@
 #
 # Input BAM (recommended) or VCF (if highly trusted SNP data) relative to Shigella sonnei 53G (NC_016822) and assign S. sonnei genotype codes and detect QRDR mutations.
 #
-# Authors - Kat Holt (drkatholt@gmail.com), Kalani Paranagama
+# Authors - Kat Holt (drkatholt@gmail.com), Kalani Paranagama, Jane Hakwey (hawkey.jane@gmail.com)
 #
 # Documentation - https://github.com/katholt/sonneityping
 #
