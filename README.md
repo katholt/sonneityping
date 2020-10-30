@@ -22,7 +22,7 @@ An example command for running Mykrobe on a sonnei genome (in this case using sh
 mykrobe predict SRR3441855 sonnei --format json --out SRR3441855.json --seq SRR3441855_1.fastq.gz SRR3441855_2.fastq.gz
 ```
 
-As input, Mykrobe can take either short-reads, fasta sequences, or Oxford Nanopore reads. If using Oxford Nanopore, add the flag `--ont` to your command.
+As input, Mykrobe can take either short-reads or Oxford Nanopore reads. If using Oxford Nanopore, add the flag `--ont` to your command.
 
 For full details on all Mykrobe options, please see [the Mykrobe documentation](https://github.com/Mykrobe-tools/mykrobe).
 
