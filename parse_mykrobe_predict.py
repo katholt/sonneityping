@@ -101,7 +101,7 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
     spp_call = list(spp_data.keys())[0]
     # if spp is unknown, then this is not sonnei, exit this function
     if spp_call == "Unknown":
-        out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'spp_confidence':['NA'], 'name':['NA'],'final_genotype':['NA'],'node_support':['NA'],'all_genotype_calls':['NA']}
+        out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final_genotype':['NA'],'node_support':['NA'],'all_genotype_calls':['NA']}
         out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'node_support', 'all_genotype_calls'])
         return out_df, spp_call
     else:
@@ -109,7 +109,7 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
         spp_percentage = spp_data["Shigella_sonnei"]["percent_coverage"]
         # if the percentage is <90, then exit this function as it's likely not sonnei
         if spp_percentage < 90:
-            out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'spp_confidence':['NA'], 'name':['NA'],'final_genotype':['NA'],'node_support':['NA'],'all_genotype_calls':['NA']}
+            out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final_genotype':['NA'],'node_support':['NA'],'all_genotype_calls':['NA']}
             out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'node_support', 'all_genotype_calls'])
             return out_df, "Unknown"
 
@@ -122,7 +122,7 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
     try:
         genotype_calls = lineage_data['lineage']['lineage']
     except KeyError:
-        out_dict = {'genome':[genome_name], 'species':['S. sonnei'], 'spp_confidence':[spp_percentage], 'name':['NA'],'final_genotype':['uncalled'],'node_support':['NA'],'all_genotype_calls':['NA']}
+        out_dict = {'genome':[genome_name], 'species':['S. sonnei'], 'name':['NA'],'final_genotype':['uncalled'],'node_support':['NA'],'all_genotype_calls':['NA']}
         out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'node_support', 'all_genotype_calls'])
         return out_df, spp_call
     # if there are no calls, populate with none
@@ -158,8 +158,7 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
         lineage_out_dict['all_genotype_calls'] = [';'.join(call_summary.keys())]
     # add species info
     lineage_out_dict['species']=['S. sonnei']
-    lineage_out_dict['spp_confidence']=[spp_percentage]
-    lineage_out_df = pd.DataFrame(lineage_out_dict, columns=['genome', 'species', 'spp_confidence', 'final_genotype', 'name', 'node_support', 'all_genotype_calls'])
+    lineage_out_df = pd.DataFrame(lineage_out_dict, columns=['genome', 'species', 'final_genotype', 'name', 'node_support', 'all_genotype_calls'])
 
     return lineage_out_df, spp_call
 
@@ -203,7 +202,7 @@ def main():
 
     # concatenate, re-order columns, and write out
     final_results = pd.concat(results_tables, sort=True)
-    final_results.to_csv(args.prefix + "_predictResults.tsv", index=False, sep="\t", columns=["genome", "species", "spp_confidence", "final_genotype", "name", "node_support", "num_qrdr", "parC_S80I", "gyrA_S83L", "gyrA_S83A", "gyrA_D87G", "gyrA_D87N", "gyrA_D87Y", "all_genotype_calls"])
+    final_results.to_csv(args.prefix + "_predictResults.tsv", index=False, sep="\t", columns=["genome", "species", "final_genotype", "name", "node_support", "num_qrdr", "parC_S80I", "gyrA_S83L", "gyrA_S83A", "gyrA_D87G", "gyrA_D87N", "gyrA_D87Y", "all_genotype_calls"])
 
 if __name__ == '__main__':
     main()
