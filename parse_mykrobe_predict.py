@@ -66,12 +66,15 @@ def extract_qrdr_info(genome_data, genome_name, spp_call):
     qrdr_out_df = pd.DataFrame(qrdr_out_dict, columns=['genome'] + qrdr_possible + ['num_qrdr'])
     return qrdr_out_df
 
-def inspect_calls(genotype_details):
+def inspect_calls(full_lineage_data):
     # for all the genotypes that mykrobe is calling, inspect the values listed next to the actual call heirarhcy
+    genotype_details = full_lineage_data['calls_summary']
     genotype_list = list(genotype_details.keys())
     # intialise empty values for best score and corresponding genotype
     best_score = 0
     best_genotype = None
+    # node support is the number of 'good nodes' called by mykrobe
+    # needs to be X/Y, where Y is the total number of levels at that genotype
     node_support = None
     # loop through each genotype
     for genotype in genotype_list:
@@ -91,8 +94,55 @@ def inspect_calls(genotype_details):
             best_score = actual_score
             best_genotype = genotype
             node_support = genotype_details[best_genotype]['good_nodes']
+    # set denominator for node_support (which is total number of levels in best genotype)
+    #total_levels = len(best_genotype.split('.'))
+    node_support = str(node_support) + '/' + str(genotype_details[best_genotype]['tree_depth'])
 
-    return best_genotype, node_support
+    # make a list of all possible quality issues (incongruent markers, or not confident calls within the best geno)
+    quality_issues = []
+    # if the node support for the best genotype is not '1' at all positions, we need to report that,
+    # and which SNVs aren't at high support
+    best_calls = genotype_details[best_genotype]['genotypes']
+    for level in best_calls.keys():
+        if best_calls[level] != 1:
+            # then it must be a 0 or a 0.5
+            # report the value (0/0.5), and also the depth compared to the reference
+            call_details = full_lineage_data['calls'][best_genotype][level]
+            # need to do this weird thing to grab the info without knowing the key name
+            call_details = call_details[list(call_details.keys())[0]]
+            ref = call_details['info']['coverage']['reference']['median_depth']
+            alt = call_details['info']['coverage']['alternate']['median_depth']
+            quality_info = '*' + level + ' (' + str(best_calls[level]) + '; ' + str(alt) + '/' + str(ref) + ')'
+            quality_issues.append(quality_info)
+
+    # we now want to report any additional markers that aren't congruent with our best genotype
+    #ie if 3.6.1 is the best genotype, but we also have a 3.7.29 call, we need to report the 3.7 and 3.29 markers as incongruent
+    if len(genotype_list) > 1:
+        # extract calls for best genotype
+        best_calls = genotype_details[best_genotype]['genotypes']
+        # remove the best genotype from the list
+        genotype_list.remove(best_genotype)
+        # loop through each incongruent phenotype
+        for genotype in genotype_list:
+            # extract the calls for that genotype
+            other_calls = genotype_details[genotype]['genotypes']
+            # for every call in our BEST calls, we're only interested
+            # in calls that are incongruent
+            for call in other_calls.keys():
+                if call not in best_calls.keys():
+                    call_info = full_lineage_data['calls'][genotype][call]
+                    # need to do this weird thing to grab the info without knowing the key name
+                    call_info = call_info[list(call_info.keys())[0]]
+                    ref_depth = call_info['info']['coverage']['reference']['median_depth']
+                    alt_depth = call_info['info']['coverage']['alternate']['median_depth']
+                    # only keep the call if the alternate has a depth of > 1
+                    # this is because mykrobe fills in intermediate levels of the heirarchy with 0s
+                    # if a lower level SNV marker is detected
+                    if alt_depth >= 1:
+                        non_matching_marker = '?' + call + ' (' + str(alt_depth) + '/' + str(ref_depth) + ')'
+                        quality_issues.append(non_matching_marker)
+
+    return best_genotype, node_support, quality_issues
 
 def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
 
@@ -101,16 +151,16 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
     spp_call = list(spp_data.keys())[0]
     # if spp is unknown, then this is not sonnei, exit this function
     if spp_call == "Unknown":
-        out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final_genotype':['NA'],'node_support':['NA'],'all_genotype_calls':['NA']}
-        out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'node_support', 'all_genotype_calls'])
+        out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final_genotype':['NA'],'node_support':['NA'],'quality issues':['']}
+        out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'node_support', 'quality issues'])
         return out_df, spp_call
     else:
         # if it is sonnei, then get the percentage
         spp_percentage = spp_data["Shigella_sonnei"]["percent_coverage"]
         # if the percentage is <90, then exit this function as it's likely not sonnei
         if spp_percentage < 90:
-            out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final_genotype':['NA'],'node_support':['NA'],'all_genotype_calls':['NA']}
-            out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'node_support', 'all_genotype_calls'])
+            out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final_genotype':['NA'],'node_support':['NA'],'quality issues':['NA']}
+            out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'node_support', 'quality issues'])
             return out_df, "Unknown"
 
     # if we are sonnei, then continue
@@ -122,20 +172,20 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
     try:
         genotype_calls = lineage_data['lineage']['lineage']
     except KeyError:
-        out_dict = {'genome':[genome_name], 'species':['S. sonnei'], 'name':['NA'],'final_genotype':['uncalled'],'node_support':['NA'],'all_genotype_calls':['NA']}
-        out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'node_support', 'all_genotype_calls'])
+        out_dict = {'genome':[genome_name], 'species':['S. sonnei'], 'name':['NA'],'final_genotype':['uncalled'],'node_support':['NA'],'quality issues':['']}
+        out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'node_support', 'quality issues'])
         return out_df, spp_call
     # if there are no calls, populate with none
     if len(genotype_calls) == 0:
-        lineage_out_dict['final_genotype'] = ['none']
-        lineage_out_dict['name']  = ['none']
+        lineage_out_dict['final_genotype'] = ['uncalled']
+        lineage_out_dict['name']  = ['NA']
         lineage_out_dict['node_support'] = ['NA']
-        lineage_out_dict['all_genotype_calls']  = ['NA']
+        lineage_out_dict['quality issues']  = ['']
     # if there is just one call, list that - but CHECK that all values in heirarchy are good (>0.5)
     # only report up to level in heirarchy where we have a good call
     if len(genotype_calls) == 1:
         # inspect calls for genotype
-        best_genotype, node_support = inspect_calls(lineage_data['lineage']['calls_summary'])
+        best_genotype, node_support, quality_issues = inspect_calls(lineage_data['lineage'])
         # extract genotype from lineage thing, add that to the table
         genotype = best_genotype.split('lineage')[1]
         lineage_out_dict['final_genotype'] = [genotype]
@@ -143,22 +193,24 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
 
         # get the nodes and all calls
         lineage_out_dict['node_support'] = [node_support]
-        lineage_out_dict['all_genotype_calls'] = genotype_calls
+        lineage_out_dict['quality issues'] = [';'.join(quality_issues)]
+        #lineage_out_dict['all_genotype_calls'] = genotype_calls
     # if there is more than one call, we want to report the best, but also other calls
     elif len(genotype_calls) > 1:
         # get the info for each call
-        call_summary = lineage_data['lineage']['calls_summary']
+        #call_summary = lineage_data['lineage']['calls_summary']
         # work out which lineage has the best call
-        best_genotype, node_support = inspect_calls(call_summary)
+        best_genotype, node_support, quality_issues = inspect_calls(lineage_data['lineage'])
         # now write out info
         lineage_out_dict['final_genotype'] = [best_genotype.split('lineage')[1]]
         lineage_out_dict['name'] = [lineage_name_dict[best_genotype]]
         #lineage_nodes = lineage_data['lineage']['calls_summary'][best_genotype]
         lineage_out_dict['node_support'] = [node_support]
-        lineage_out_dict['all_genotype_calls'] = [';'.join(call_summary.keys())]
+        lineage_out_dict['quality issues'] = [';'.join(quality_issues)]
+        #lineage_out_dict['all_genotype_calls'] = [';'.join(call_summary.keys())]
     # add species info
     lineage_out_dict['species']=['S. sonnei']
-    lineage_out_df = pd.DataFrame(lineage_out_dict, columns=['genome', 'species', 'final_genotype', 'name', 'node_support', 'all_genotype_calls'])
+    lineage_out_df = pd.DataFrame(lineage_out_dict, columns=['genome', 'species', 'final_genotype', 'name', 'node_support', 'quality issues'])
 
     return lineage_out_df, spp_call
 
@@ -202,7 +254,7 @@ def main():
 
     # concatenate, re-order columns, and write out
     final_results = pd.concat(results_tables, sort=True)
-    final_results.to_csv(args.prefix + "_predictResults.tsv", index=False, sep="\t", columns=["genome", "species", "final_genotype", "name", "node_support", "num_qrdr", "parC_S80I", "gyrA_S83L", "gyrA_S83A", "gyrA_D87G", "gyrA_D87N", "gyrA_D87Y", "all_genotype_calls"])
+    final_results.to_csv(args.prefix + "_predictResults.tsv", index=False, sep="\t", columns=["genome", "species", "final_genotype", "name", "node_support", "num_qrdr", "parC_S80I", "gyrA_S83L", "gyrA_S83A", "gyrA_D87G", "gyrA_D87N", "gyrA_D87Y", "quality issues"])
 
 if __name__ == '__main__':
     main()
