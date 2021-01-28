@@ -104,16 +104,25 @@ def inspect_calls(full_lineage_data):
     # and which SNVs aren't at high support
     best_calls = genotype_details[best_genotype]['genotypes']
     for level in best_calls.keys():
-        if best_calls[level] != 1:
+        # if call is 1 then that is fine
+        # if call is 0.5, then get info
+        # if call is 0, there will be no info in the calls section, so just report 0s everywhere
+        if best_calls[level] < 1:
             # then it must be a 0 or a 0.5
             # report the value (0/0.5), and also the depth compared to the reference
             call_details = full_lineage_data['calls'][best_genotype][level]
-            # need to do this weird thing to grab the info without knowing the key name
-            call_details = call_details[list(call_details.keys())[0]]
-            ref = call_details['info']['coverage']['reference']['median_depth']
-            alt = call_details['info']['coverage']['alternate']['median_depth']
-            quality_info = '*' + level + ' (' + str(best_calls[level]) + '; ' + str(alt) + '/' + str(ref) + ')'
-            quality_issues.append(quality_info)
+            # check that there is something there
+            if call_details:
+                # need to do this weird thing to grab the info without knowing the key name
+                call_details = call_details[list(call_details.keys())[0]]
+                ref = call_details['info']['coverage']['reference']['median_depth']
+                alt = call_details['info']['coverage']['alternate']['median_depth']
+                quality_info = '*' + level + ' (' + str(best_calls[level]) + '; ' + str(alt) + '/' + str(ref) + ')'
+                quality_issues.append(quality_info)
+            # if the value is null, just report 0 (indicates that no SNV detected, either ref or alt?)
+            else:
+                quality_info = '*' + level + ' (0)'
+                quality_issues.append(quality_info)
 
     # we now want to report any additional markers that aren't congruent with our best genotype
     #ie if 3.6.1 is the best genotype, but we also have a 3.7.29 call, we need to report the 3.7 and 3.29 markers as incongruent
@@ -131,16 +140,18 @@ def inspect_calls(full_lineage_data):
             for call in other_calls.keys():
                 if call not in best_calls.keys():
                     call_info = full_lineage_data['calls'][genotype][call]
-                    # need to do this weird thing to grab the info without knowing the key name
-                    call_info = call_info[list(call_info.keys())[0]]
-                    ref_depth = call_info['info']['coverage']['reference']['median_depth']
-                    alt_depth = call_info['info']['coverage']['alternate']['median_depth']
-                    # only keep the call if the alternate has a depth of > 1
-                    # this is because mykrobe fills in intermediate levels of the heirarchy with 0s
-                    # if a lower level SNV marker is detected
-                    if alt_depth >= 1:
-                        non_matching_marker = '?' + call + ' (' + str(other_calls[call]) + '; ' + str(alt_depth) + '/' + str(ref_depth) + ')'
-                        quality_issues.append(non_matching_marker)
+                    # check that there is something there (if the value is null, don't report it for incongruent calls)
+                    if call_info:
+                        # need to do this weird thing to grab the info without knowing the key name
+                        call_info = call_info[list(call_info.keys())[0]]
+                        ref_depth = call_info['info']['coverage']['reference']['median_depth']
+                        alt_depth = call_info['info']['coverage']['alternate']['median_depth']
+                        # only keep the call if the alternate has a depth of > 1
+                        # this is because mykrobe fills in intermediate levels of the heirarchy with 0s
+                        # if a lower level SNV marker is detected
+                        if alt_depth >= 1:
+                            non_matching_marker = '?' + call + ' (' + str(other_calls[call]) + '; ' + str(alt_depth) + '/' + str(ref_depth) + ')'
+                            quality_issues.append(non_matching_marker)
 
     return best_genotype, node_support, quality_issues
 
