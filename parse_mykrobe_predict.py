@@ -139,7 +139,7 @@ def inspect_calls(full_lineage_data):
                     # this is because mykrobe fills in intermediate levels of the heirarchy with 0s
                     # if a lower level SNV marker is detected
                     if alt_depth >= 1:
-                        non_matching_marker = '?' + call + ' (' + str(alt_depth) + '/' + str(ref_depth) + ')'
+                        non_matching_marker = '?' + call + ' (' + str(other_calls[call]) + '; ' + str(alt_depth) + '/' + str(ref_depth) + ')'
                         quality_issues.append(non_matching_marker)
 
     return best_genotype, node_support, quality_issues
@@ -238,6 +238,7 @@ def main():
             print("More than one result in mykrobe output file " + json_file + ", quitting")
             sys.exit()
         genome_name = list(myk_result.keys())[0]
+        print(genome_name)
         # extract all the data for this genome
         genome_data = myk_result[genome_name]
         # extract the genotyping information
