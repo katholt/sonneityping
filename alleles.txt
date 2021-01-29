@@ -136,7 +136,7 @@
 2162977	A	3.7.33	Global III	lineage3.7.33
 3158047	T	3.8	-	lineage3.8
 3578187	T	3.9	-	lineage3.9
-4386138	G	3.1	-	lineage3.1
+4386138	G	3.10	-	lineage3.10
 4807527	T	4	Lineage IV	lineage4
 5824	T	5	Lineage V	lineage5
 3861343	G	5.1.1	-	lineage5.1.1
