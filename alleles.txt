@@ -126,6 +126,7 @@
 3638083	T	3.7.29.1.3	Global III VN2.Hue	lineage3.7.29.1.3
 2151320	T	3.7.29.1.4	Global III VN2.KH1	lineage3.7.29.1.4
 294523	T	3.7.29.1.4.1	Global III VN2.KH1.Aus	lineage3.7.29.1.4.1
+1138004	G	3.7.30	Global III Middle East III	lineage3.7.30
 4117025	T	3.7.30.1	Global III Middle East III	lineage3.7.30.1
 185962	T	3.7.30.2	Global III Middle East III	lineage3.7.30.2
 4478931	T	3.7.30.3	Global III Middle East III	lineage3.7.30.3

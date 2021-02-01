@@ -95,8 +95,13 @@ def inspect_calls(full_lineage_data):
             best_genotype = genotype
             node_support = genotype_details[best_genotype]['good_nodes']
     # set denominator for node_support (which is total number of levels in best genotype)
-    #total_levels = len(best_genotype.split('.'))
-    node_support = str(node_support) + '/' + str(genotype_details[best_genotype]['tree_depth'])
+    total_nodes = genotype_details[best_genotype]['tree_depth']
+    # subtract one from total nodes if 5.1 or 3.7.30 in the genotype (as we are have no markers defined
+    # for either 5.1 or 3.7.30)
+    if '5.1' in best_genotype:
+        total_nodes = total_nodes - 1
+    # put together final node support
+    node_support = str(node_support) + ' of ' + str(total_nodes)
 
     # make a list of all possible quality issues (incongruent markers, or not confident calls within the best geno)
     quality_issues = []
@@ -107,7 +112,8 @@ def inspect_calls(full_lineage_data):
         # if call is 1 then that is fine
         # if call is 0.5, then get info
         # if call is 0, there will be no info in the calls section, so just report 0s everywhere
-        if best_calls[level] < 1:
+        # note we do not have a markers for lineage5.1 so don't report this as 0
+        if best_calls[level] < 1 and level != 'lineage5.1':
             # then it must be a 0 or a 0.5
             # report the value (0/0.5), and also the depth compared to the reference
             call_details = full_lineage_data['calls'][best_genotype][level]
@@ -249,7 +255,6 @@ def main():
             print("More than one result in mykrobe output file " + json_file + ", quitting")
             sys.exit()
         genome_name = list(myk_result.keys())[0]
-        print(genome_name)
         # extract all the data for this genome
         genome_data = myk_result[genome_name]
         # extract the genotyping information
