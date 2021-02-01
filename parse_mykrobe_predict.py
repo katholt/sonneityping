@@ -119,14 +119,17 @@ def inspect_calls(full_lineage_data):
                 ref = call_details['info']['coverage']['reference']['median_depth']
                 alt = call_details['info']['coverage']['alternate']['median_depth']
                 # calculate percent support
-                percent_support = alt / (alt + ref)
+                try:
+                    percent_support = alt / (alt + ref)
+                except ZeroDivisionError:
+                    percent_support = 0
                 lowest_within_genotype_percents[percent_support] = level
                 # create string to put in table
                 marker_string = level + ' (' + str(best_calls[level]) + '; ' + str(alt) + '/' + str(ref) + ')'
                 poorly_supported_markers.append(marker_string)
             # if the value is null, just report 0 (indicates that no SNV detected, either ref or alt?)
             else:
-                lowest_within_genotype_percents[0] = percent_support
+                lowest_within_genotype_percents[0] = level
                 marker_string = level + ' (0)'
                 poorly_supported_markers.append(marker_string)
     # determining final confidence is based ONLY on the actual genotype, not incongruent genotype calls
@@ -141,11 +144,13 @@ def inspect_calls(full_lineage_data):
     elif best_calls_vals.count(0) == 0 and best_calls_vals.count(0.5) == 1:
         if min(lowest_within_genotype_percents.keys()) > 0.5:
             confidence = 'moderate'
-            lowest_support_val = round(min(lowest_within_genotype_percents.keys()), 3)
+        else:
+            confidence = 'weak'
+        lowest_support_val = round(min(lowest_within_genotype_percents.keys()), 3)
     # weak = more than one quality < 1, or the single 0.5 call is < 0.5% support
     else:
         confidence = 'weak'
-        lowest_support_value = round(min(lowest_within_genotype_percents.keys()) ,3)
+        lowest_support_val = round(min(lowest_within_genotype_percents.keys()), 3)
 
     # make a list of all possible quality issues (incongruent markers, or not confident calls within the best geno)
     non_matching_markers = []
@@ -184,6 +189,7 @@ def inspect_calls(full_lineage_data):
         max_non_matching = round(max(non_matching_supports), 3)
     else:
         max_non_matching = ''
+
     return best_genotype, confidence, lowest_support_val, poorly_supported_markers, max_non_matching, non_matching_markers
 
 def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
