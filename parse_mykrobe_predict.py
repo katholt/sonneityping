@@ -29,17 +29,17 @@ def extract_qrdr_info(genome_data, genome_name, spp_call):
             qrdr_out_dict['genome'] = [genome_name]
             for allele in qrdr_possible:
                 qrdr_out_dict[allele] = ['NA']
-            qrdr_out_dict['num_qrdr'] = ['NA']
+            qrdr_out_dict['num QRDR'] = ['NA']
             # make table
-            qrdr_out_df = pd.DataFrame(qrdr_out_dict, columns=['genome'] + qrdr_possible + ['num_qrdr'])
+            qrdr_out_df = pd.DataFrame(qrdr_out_dict, columns=['genome'] + qrdr_possible + ['num QRDR'])
             return qrdr_out_df
     else:
         qrdr_out_dict['genome'] = [genome_name]
         for allele in qrdr_possible:
             qrdr_out_dict[allele] = ['NA']
-        qrdr_out_dict['num_qrdr'] = ['NA']
+        qrdr_out_dict['num QRDR'] = ['NA']
         # make table
-        qrdr_out_df = pd.DataFrame(qrdr_out_dict, columns=['genome'] + qrdr_possible + ['num_qrdr'])
+        qrdr_out_df = pd.DataFrame(qrdr_out_dict, columns=['genome'] + qrdr_possible + ['num QRDR'])
         return qrdr_out_df
 
     # set up the list of calls in this genome
@@ -61,9 +61,9 @@ def extract_qrdr_info(genome_data, genome_name, spp_call):
         else:
             qrdr_out_dict[allele] = [0]
     # add column with total number of qrdr calls
-    qrdr_out_dict['num_qrdr'] = [num_qrdr_calls]
+    qrdr_out_dict['num QRDR'] = [num_qrdr_calls]
     # make table
-    qrdr_out_df = pd.DataFrame(qrdr_out_dict, columns=['genome'] + qrdr_possible + ['num_qrdr'])
+    qrdr_out_df = pd.DataFrame(qrdr_out_dict, columns=['genome'] + qrdr_possible + ['num QRDR'])
     return qrdr_out_df
 
 def inspect_calls(full_lineage_data):
@@ -103,35 +103,44 @@ def inspect_calls(full_lineage_data):
     poorly_supported_markers = []
     # dict that keeps percentage supports, key=percent support; value=level
     lowest_within_genotype_percents = {}
+    # list that gives supports for all markers in best call
+    final_markers = []
     for level in best_calls.keys():
+        # regardless of the call, get info
+        call_details = full_lineage_data['calls'][best_genotype][level]
+        # check that there is something there
+        if call_details:
+            # need to do this weird thing to grab the info without knowing the key name
+            call_details = call_details[list(call_details.keys())[0]]
+            ref = call_details['info']['coverage']['reference']['median_depth']
+            alt = call_details['info']['coverage']['alternate']['median_depth']
+            # calculate percent support for marker
+            try:
+                percent_support = alt / (alt + ref)
+            except ZeroDivisionError:
+                percent_support = 0
+            marker_string = level + ' (' + str(best_calls[level]) + '; ' + str(alt) + '/' + str(ref) + ')'
+            final_markers.append(marker_string)
+        # if the value is null, just report 0 (indicates that no SNV detected, either ref or alt?)
+        else:
+            # note we do not have a markers for lineage5.1 so don't report this as 0
+            if level != 'lineage5.1':
+                lowest_within_genotype_percents[0] = level
+                marker_string = level + ' (0)'
+                # its returned null so is therefore by definition poorly supported
+                poorly_supported_markers.append(marker_string)
+                # add to the final markers list too
+                final_markers.append(marker_string)
         # if call is 1 then that is fine, count to determine confidence later
         # if call is 0.5, then get info
         # if call is 0, there will be no info in the calls section, so just report 0s everywhere
-        # note we do not have a markers for lineage5.1 so don't report this as 0
         if best_calls[level] < 1 and level != 'lineage5.1':
             # then it must be a 0 or a 0.5
             # report the value (0/0.5), and also the depth compared to the reference
-            call_details = full_lineage_data['calls'][best_genotype][level]
-            # check that there is something there
-            if call_details:
-                # need to do this weird thing to grab the info without knowing the key name
-                call_details = call_details[list(call_details.keys())[0]]
-                ref = call_details['info']['coverage']['reference']['median_depth']
-                alt = call_details['info']['coverage']['alternate']['median_depth']
-                # calculate percent support
-                try:
-                    percent_support = alt / (alt + ref)
-                except ZeroDivisionError:
-                    percent_support = 0
-                lowest_within_genotype_percents[percent_support] = level
-                # create string to put in table
-                marker_string = level + ' (' + str(best_calls[level]) + '; ' + str(alt) + '/' + str(ref) + ')'
-                poorly_supported_markers.append(marker_string)
-            # if the value is null, just report 0 (indicates that no SNV detected, either ref or alt?)
-            else:
-                lowest_within_genotype_percents[0] = level
-                marker_string = level + ' (0)'
-                poorly_supported_markers.append(marker_string)
+            lowest_within_genotype_percents[percent_support] = level
+            # add this to the list of poorly supported markers
+            poorly_supported_markers.append(marker_string)
+
     # determining final confidence is based ONLY on the actual genotype, not incongruent genotype calls
     # if there is a lineage5.1 in the call, then we need to remove one of the 0s in best_calls_vals
     if 'lineage5.1' in best_calls.keys():
@@ -190,7 +199,7 @@ def inspect_calls(full_lineage_data):
     else:
         max_non_matching = ''
 
-    return best_genotype, confidence, lowest_support_val, poorly_supported_markers, max_non_matching, non_matching_markers
+    return best_genotype, confidence, lowest_support_val, poorly_supported_markers, max_non_matching, non_matching_markers, final_markers
 
 def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
 
@@ -199,16 +208,16 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
     spp_call = list(spp_data.keys())[0]
     # if spp is unknown, then this is not sonnei, exit this function
     if spp_call == "Unknown":
-        out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final_genotype':['NA'],'confidence':['NA'],'lowest support for genotype marker':[''], 'poorly supported markers':[''], 'max support for additional markers':[''], 'additional markers':['']}
-        out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'confidence', 'lowest support for genotype marker', 'poorly supported markers', 'max support for additional markers', 'additional markers'])
+        out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final genotype':['NA'],'confidence':['NA'],'lowest support for genotype marker':[''], 'poorly supported markers':[''], 'node support':[''], 'max support for additional markers':[''], 'additional markers':['']}
+        out_df = pd.DataFrame(out_dict, columns=['genome', 'final genotype', 'name', 'confidence', 'lowest support for genotype marker', 'poorly supported markers', 'node support', 'max support for additional markers', 'additional markers'])
         return out_df, spp_call
     else:
         # if it is sonnei, then get the percentage
         spp_percentage = spp_data["Shigella_sonnei"]["percent_coverage"]
         # if the percentage is <90, then exit this function as it's likely not sonnei
         if spp_percentage < 90:
-            out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final_genotype':['NA'],'confidence':['NA'],'lowest support for genotype marker':[''], 'poorly supported markers':[''], 'max support for additional markers':[''], 'additional markers':['']}
-            out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'confidence', 'lowest supprot for genotype marker', 'poorly supported markers', 'max support for additional markers', 'additional markers'])
+            out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final genotype':['NA'],'confidence':['NA'],'lowest support for genotype marker':[''], 'poorly supported markers':[''], 'node support':[''], 'max support for additional markers':[''], 'additional markers':['']}
+            out_df = pd.DataFrame(out_dict, columns=['genome', 'final genotype', 'name', 'confidence', 'lowest supprot for genotype marker', 'poorly supported markers', 'node support', 'max support for additional markers', 'additional markers'])
             return out_df, "Unknown"
 
     # if we are sonnei, then continue
@@ -220,8 +229,8 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
     try:
         genotype_calls = lineage_data['lineage']['lineage']
     except KeyError:
-        out_dict = {'genome':[genome_name], 'species':['S. sonnei'], 'name':['NA'],'final_genotype':['uncalled'],'confidence':['NA'],'lowest support for genotype marker':[''], 'poorly supported markers':[''], 'max support for additional markers':[''], 'additional markers':['']}
-        out_df = pd.DataFrame(out_dict, columns=['genome', 'genotype', 'name', 'confidence', 'lowest support for genotype marker', 'poorly supported markers', 'max support for additional markers', 'additional markers'])
+        out_dict = {'genome':[genome_name], 'species':['S. sonnei'], 'name':['NA'],'final genotype':['uncalled'],'confidence':['NA'],'lowest support for genotype marker':[''], 'poorly supported markers':[''], 'max support for additional markers':[''], 'additional markers':[''], 'node support':['']}
+        out_df = pd.DataFrame(out_dict, columns=['genome', 'final genotype', 'name', 'confidence', 'lowest support for genotype marker', 'poorly supported markers', 'node support', 'max support for additional markers', 'additional markers'])
         return out_df, spp_call
     # if there are no calls, populate with none
     if len(genotype_calls) == 0:
@@ -232,14 +241,15 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
         lineage_out_dict['poorly supported markers']  = ['']
         lineage_out_dict['max support for additional markers']  = ['']
         lineage_out_dict['additional markers']  = ['']
+        lineage_out_dict['node support'] = ['']
     # if there is just one call, list that - but CHECK that all values in heirarchy are good (>0.5)
     # only report up to level in heirarchy where we have a good call
     if len(genotype_calls) == 1:
         # inspect calls for genotype
-        best_genotype, confidence, lowest_support_val, poorly_supported_markers, non_matching_support, non_matching_markers = inspect_calls(lineage_data['lineage'])
+        best_genotype, confidence, lowest_support_val, poorly_supported_markers, non_matching_support, non_matching_markers, final_markers = inspect_calls(lineage_data['lineage'])
         # extract genotype from lineage thing, add that to the table
         genotype = best_genotype.split('lineage')[1]
-        lineage_out_dict['final_genotype'] = [genotype]
+        lineage_out_dict['final genotype'] = [genotype]
         lineage_out_dict['name'] = [lineage_name_dict[best_genotype]]
 
         # fill in all details on confidence/support
@@ -248,23 +258,25 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
         lineage_out_dict['poorly supported markers'] = ['; '.join(poorly_supported_markers)]
         lineage_out_dict['max support for additional markers'] = [non_matching_support]
         lineage_out_dict['additional markers'] = ['; '.join(non_matching_markers)]
+        lineage_out_dict['node support'] = ['; '.join(final_markers)]
         #lineage_out_dict['all_genotype_calls'] = genotype_calls
     # if there is more than one call, we want to report the best, but also other calls
     elif len(genotype_calls) > 1:
         # get the info for each call
         # work out which lineage has the best call
-        best_genotype, confidence, lowest_support_val, poorly_supported_markers, non_matching_support, non_matching_markers = inspect_calls(lineage_data['lineage'])
+        best_genotype, confidence, lowest_support_val, poorly_supported_markers, non_matching_support, non_matching_markers, final_markers = inspect_calls(lineage_data['lineage'])
         # now write out info
-        lineage_out_dict['final_genotype'] = [best_genotype.split('lineage')[1]]
+        lineage_out_dict['final genotype'] = [best_genotype.split('lineage')[1]]
         lineage_out_dict['name'] = [lineage_name_dict[best_genotype]]
         lineage_out_dict['confidence'] = [confidence]
         lineage_out_dict['lowest support for genotype marker'] = [lowest_support_val]
         lineage_out_dict['poorly supported markers'] = ['; '.join(poorly_supported_markers)]
         lineage_out_dict['max support for additional markers'] = [non_matching_support]
         lineage_out_dict['additional markers'] = ['; '.join(non_matching_markers)]
+        lineage_out_dict['node support'] = ['; '.join(final_markers)]
     # add species info
     lineage_out_dict['species']=['S. sonnei']
-    lineage_out_df = pd.DataFrame(lineage_out_dict, columns=['genome', 'species', 'final_genotype', 'name', 'confidence', 'lowest support for genotype marker', 'poorly supported markers', 'max support for additional markers', 'additional markers'])
+    lineage_out_df = pd.DataFrame(lineage_out_dict, columns=['genome', 'species', 'final genotype', 'name', 'confidence', 'lowest support for genotype marker', 'poorly supported markers', 'node support', 'max support for additional markers', 'additional markers'])
 
     return lineage_out_df, spp_call
 
@@ -308,7 +320,7 @@ def main():
 
     # concatenate, re-order columns, and write out
     final_results = pd.concat(results_tables, sort=True)
-    final_results.to_csv(args.prefix + "_predictResults.tsv", index=False, sep="\t", columns=["genome", "species", "final_genotype", "name", "confidence", "num_qrdr", "parC_S80I", "gyrA_S83L", "gyrA_S83A", "gyrA_D87G", "gyrA_D87N", "gyrA_D87Y", "lowest support for genotype marker", "poorly supported markers", "max support for additional markers", "additional markers"])
+    final_results.to_csv(args.prefix + "_predictResults.tsv", index=False, sep="\t", columns=["genome", "species", "final genotype", "name", "confidence", "num QRDR", "parC_S80I", "gyrA_S83L", "gyrA_S83A", "gyrA_D87G", "gyrA_D87N", "gyrA_D87Y", "lowest support for genotype marker", "poorly supported markers", "max support for additional markers", "additional markers", "node support"])
 
 if __name__ == '__main__':
     main()
