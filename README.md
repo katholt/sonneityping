@@ -21,6 +21,11 @@ mykrobe panels update_metadata
 mykrobe panels update_species_all
 ```
 
+You can check what version of the scheme is currently loaded in your Mykrobe installation via:
+```
+mykrobe panels describe
+```
+
 ### Run mykrobe predict on each genome (Illumina reads, nanopore reads, etc)
 
 Example command (using Illumina reads, SRR3441855):
