@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/211027360.svg)](https://zenodo.org/badge/latestdoi/211027360)
+
 # parse_mykrobe_predict.py
 
 This script parses Mykrobe predict results for *Shigella sonnei*. 
