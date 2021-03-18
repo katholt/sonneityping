@@ -43,13 +43,14 @@ mykrobe predict SRR3441855 sonnei --format json --out SRR3441855.json --seq SRR3
 
 **Input**
 * JSON files output from `mykrobe predict` using the `sonnei` panel (`--jsons`)
+* alleles.txt file (found in this github repo) linking each lineage name to its human-readable counterpart (`--alleles`)
 
 **Output**
 * tab-delimited file with one row per genome detailing genotype and QRDR mutations (`--prefix`)
 
 **Example command**
 ```
-python parse_mykrobe_predict.py --jsons mykrobe_results/*.json --prefix results_mykrobe_parsed
+python parse_mykrobe_predict.py --jsons mykrobe_results/*.json --alleles alleles.txt --prefix results_mykrobe_parsed
 ```
 
 ## Example output
