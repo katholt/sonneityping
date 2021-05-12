@@ -4,7 +4,9 @@
 
 This script parses Mykrobe predict results for *Shigella sonnei*. 
 
-Mykrobe v0.9.0+ can identify input genomes as _S. sonnei_, assign those identified as _S. sonnei_ to hierarchical genotypes based on detection of single nucleotide variants (SNVs; defined in the file alleles.txt), and report known mutations in the quinolone-resistance determining region (QRDR) of genes *gyrA* (S83L, D87G, D87Y) and *parC* (S80I). Details of the genotyping scheme are available in the preprint [Hawkey et al, 2020](https://www.biorxiv.org/content/10.1101/2020.10.29.360040v1).
+Mykrobe v0.9.0+ can identify input genomes as _S. sonnei_, assign those identified as _S. sonnei_ to hierarchical genotypes based on detection of single nucleotide variants (SNVs; defined in the file alleles.txt), and report known mutations in the quinolone-resistance determining region (QRDR) of genes *gyrA* (S83L, D87G, D87Y) and *parC* (S80I). 
+
+Details of the genotyping scheme are available in the paper [Hawkey et al, 2021, Nature Communications](https://www.nature.com/articles/s41467-021-22700-4). Proposals for new genotype definitions to be added to the scheme can be submitted as an Issue in this repository.
 
 This script can be used to parse the resulting JSON files output by Mykrobe (one per genome), and tabulate the results in a single tab-delimited file [(example below)](#example-output).
 
