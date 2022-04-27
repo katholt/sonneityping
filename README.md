@@ -22,7 +22,7 @@ First, install Mykrobe (v0.9.0+) as per the instructions on the [Mykrobe github]
 Once Mykrobe is installed, make sure you run the following two commands to ensure you have the most up-to-date panels for genotyping:
 ```
 mykrobe panels update_metadata
-mykrobe panels update_species_all
+mykrobe panels update_species all
 ```
 
 You can check what version of the scheme is currently loaded in your Mykrobe installation via:
