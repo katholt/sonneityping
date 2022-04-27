@@ -34,7 +34,7 @@ mykrobe panels describe
 
 Example command (using Illumina reads, SRR3441855):
 ```
-mykrobe predict SRR3441855 sonnei --format json --out SRR3441855.json --seq SRR3441855_1.fastq.gz SRR3441855_2.fastq.gz
+mykrobe predict --sample SRR3441855 --species sonnei --format json --out SRR3441855.json --seq SRR3441855_1.fastq.gz SRR3441855_2.fastq.gz
 ```
 
 * For Oxford Nanopore reads, add the flag `--ont` to your command.
