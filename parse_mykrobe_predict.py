@@ -226,7 +226,7 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
     # if spp is unknown, then this is not sonnei, exit this function
     if spp_call == "Unknown":
         out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final genotype':['NA'],'confidence':['NA'],'lowest support for genotype marker':[''], 'poorly supported markers':[''], 'node support':[''], 'max support for additional markers':[''], 'additional markers':['']}
-        out_df = pd.DataFrame(out_dict, columns=['genome', 'final genotype', 'name', 'confidence', 'lowest support for genotype marker', 'poorly supported markers', 'node support', 'max support for additional markers', 'additional markers'])
+        out_df = pd.DataFrame(out_dict, columns=['genome', 'species', 'final genotype', 'name', 'confidence', 'lowest support for genotype marker', 'poorly supported markers', 'node support', 'max support for additional markers', 'additional markers'])
         return out_df, spp_call
     else:
         # if it is sonnei, then get the percentage
@@ -234,7 +234,7 @@ def extract_lineage_info(lineage_data, genome_name, lineage_name_dict):
         # if the percentage is <90, then exit this function as it's likely not sonnei
         if spp_percentage < 90:
             out_dict = {'genome':[genome_name], 'species':['not S. sonnei'], 'name':['NA'],'final genotype':['NA'],'confidence':['NA'],'lowest support for genotype marker':[''], 'poorly supported markers':[''], 'node support':[''], 'max support for additional markers':[''], 'additional markers':['']}
-            out_df = pd.DataFrame(out_dict, columns=['genome', 'final genotype', 'name', 'confidence', 'lowest supprot for genotype marker', 'poorly supported markers', 'node support', 'max support for additional markers', 'additional markers'])
+            out_df = pd.DataFrame(out_dict, columns=['genome', 'species', 'final genotype', 'name', 'confidence', 'lowest support for genotype marker', 'poorly supported markers', 'node support', 'max support for additional markers', 'additional markers'])
             return out_df, "Unknown"
 
     # if we are sonnei, then continue
